@@ -116,6 +116,8 @@ const SwappingScreen = () => {
     if (!fromTokenInfo || !toTokenInfo || !lastSwapResult?.quoteReponse) {
       return null;
     }
+    const amountsEstimated = Boolean(lastSwapResult.swapResult && 'amountsEstimated' in lastSwapResult.swapResult &&
+      lastSwapResult.swapResult.amountsEstimated);
 
     return (
       <>
@@ -131,11 +133,12 @@ const SwappingScreen = () => {
         <div className="flex flex-col justify-center items-center gap-y-2">
           <div className="mt-2 flex flex-col items-center justify-center text-center px-4">
             <p className="text-xs font-semibold text-primary-text">
-              Swapped {formatUiAmount(inputAmount, fromTokenInfo)} {fromTokenInfo.symbol} to
+              {amountsEstimated ? 'Trade confirmed. Quoted' : 'Swapped'} {formatUiAmount(inputAmount, fromTokenInfo)} {fromTokenInfo.symbol} to
             </p>
             <p className="text-2xl font-semibold text-primary-text">
               {formatUiAmount(outputAmount, toTokenInfo)} {toTokenInfo.symbol}
             </p>
+            {amountsEstimated && <p className="text-xs text-primary-text/50">Estimated output; view the transaction for the settled amount.</p>}
           </div>
 
           <div className=" bg-module rounded-xl overflow-y-auto w-full webkit-scrollbar py-3 max-h-[260px]  px-3">

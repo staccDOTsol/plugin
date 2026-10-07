@@ -11,6 +11,7 @@ interface ITokenIconProps {
 }
 
 function genImageTransformURL(url: string) {
+  if (url.startsWith('/') || url.startsWith('https://api.captainhook.fun/')) return url;
   const qs = new URLSearchParams({
     w: '48',
     h: '48',

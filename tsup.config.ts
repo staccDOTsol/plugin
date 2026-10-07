@@ -18,7 +18,7 @@ const config: Options = {
       modules: {
         fs: 'empty',
       },
-    }),
+    }) as unknown as NonNullable<Options['esbuildPlugins']>[number],
   ],
 };
 

@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js';
 import { useMemo } from 'react';
-import { formatNumber } from 'src/misc/utils';
+import { formatNumber, formatUiAmount } from 'src/misc/utils';
 import ExchangeRate from '../ExchangeRate';
 import TransactionFee from './TransactionFee';
 import { QuoteResponse } from 'src/contexts/SwapContext';
@@ -32,6 +32,8 @@ const Index = ({
   );
 
   const priceImpactText = Number(priceImpact) < 0.01 ? undefined : `-${priceImpact}%`;
+  const directHookRoute = quoteResponse.original.routeKind === 'hooked-orca';
+  const minimumOutput = quoteResponse.quoteResponse.otherAmountThreshold;
   const fee = useMemo(() => {
     if (!quoteResponse) {
       return 0;
@@ -57,6 +59,12 @@ const Index = ({
 
   return (
     <div className={cn('mt-4 space-y-4 ', containerClassName)}>
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <span className="text-primary-text/50">Route</span>
+        <span className="text-primary-text text-right">
+          {directHookRoute ? quoteResponse.original.routePlan.map((step) => step.swapInfo.label).join(' → ') : 'Jupiter Ultra'}
+        </span>
+      </div>
       <div className="flex items-center justify-between text-xs">
         <div className="text-primary-text/50">{<span>Rate</span>}</div>
         {rateParams.inAmount > BigInt(0) &&
@@ -82,6 +90,15 @@ const Index = ({
         </div>
       )}
 
+      {minimumOutput > BigInt(0) && (
+        <div className="flex items-center justify-between gap-3 text-xs">
+          <span className="text-primary-text/50">Minimum receive</span>
+          <span className="text-primary-text text-right">
+            {formatUiAmount(minimumOutput, toTokenInfo)} {toTokenInfo.symbol}
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between text-xs">
         <div className="text-primary-text/50">
           <span>Platform Fee</span>
@@ -89,6 +106,14 @@ const Index = ({
         <div className="text-primary-text">{fee}%</div>
       </div>
       <TransactionFee gasFee={gasFee} gasless={quoteResponse?.quoteResponse.gasless} />
+      {directHookRoute && (
+        <p className="text-[11px] leading-4 text-primary-text/50">
+          {quoteResponse.original.simulation?.passed ? quoteResponse.original.simulation.stage === 'swap'
+            ? 'Complete trade passed mainnet simulation for this wallet.' : 'Account setup passed simulation. The full swap is checked after setup.'
+            : 'Connect a holder wallet to verify eligibility and simulate the complete trade.'}
+          {quoteResponse.original.amountMode === 'max' && ' Input is a maximum; unused input stays in your wallet.'}
+        </p>
+      )}
     </div>
   );
 };

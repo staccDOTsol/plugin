@@ -16,19 +16,13 @@ const containerId = 'jupiter-plugin-instance';
 const packageJson = require('../package.json');
 const bundleName = `plugin-${packageJson.version}`;
 
-const scriptDomain =
-  (() => {
-    if (!process.env.NEXT_PUBLIC_IS_PLUGIN_DEV) {
-         return null
-    }
-    if (typeof window === 'undefined' || typeof document === 'undefined') return '';
-    
-    const url = (document.currentScript as HTMLScriptElement)?.src;
-    if (url) {
-      return new URL(url).origin;
-    }
-    return null;
-  })() || 'https://plugin.jup.ag';
+const scriptDomain = (() => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return '';
+  const configured = process.env.NEXT_PUBLIC_THOOOK_PLUGIN_ORIGIN;
+  if (configured) return configured.replace(/\/$/, '');
+  const url = (document.currentScript as HTMLScriptElement | null)?.src;
+  return url ? new URL(url).origin : window.location.origin;
+})();
 
 async function loadRemote(id: string, href: string, type: 'text/javascript' | 'stylesheet') {
   return new Promise((res, rej) => {
@@ -305,6 +299,7 @@ async function init(passedProps: IInit) {
     `${scriptDomain}/scoped-preflight-v4.css`,
     `${scriptDomain}/${bundleName}-Jupiter.css`,
     'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins&display=swap',
+    `${scriptDomain}/captain-widget.css`,
   ];
 
   const root = createRoot(targetDiv);

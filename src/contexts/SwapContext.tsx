@@ -25,6 +25,7 @@ import { Asset } from 'src/entity/SearchResponse';
 import { useAsset } from 'src/hooks/useAsset';
 import { PublicKey } from '@solana/web3.js';
 import { TransactionError } from 'src/types/TransactionError';
+import { TraderRequestError } from 'src/data/TraderApi';
 
 export interface IForm {
   fromMint: string;
@@ -45,6 +46,7 @@ export type SwapResult =
       outputAddress: PublicKey;
       inputAmount: number;
       outputAmount: number;
+      amountsEstimated?: boolean;
     }
   | {
       error?: TransactionError;
@@ -202,7 +204,7 @@ export const SwapContextProvider = (props: PropsWithChildren<IInit>) => {
       outputMint: debouncedForm.toMint,
       amount: amount.toString(),
       taker: walletPublicKey,
-      swapMode: isToPairFocused.current ? 'ExactOut' : 'ExactIn',
+       swapMode: formProps.swapMode === 'ExactIn' ? 'ExactIn' : isToPairFocused.current ? 'ExactOut' : 'ExactIn',
       referralAccount: formProps.referralAccount,
       referralFee: formProps.referralFee,
       excludeDexes: formProps.excludeDexes,
@@ -222,6 +224,12 @@ export const SwapContextProvider = (props: PropsWithChildren<IInit>) => {
         setErrors({
           fromValue: { title: quoteError, message: '' },
         });
+        return;
+      }
+
+      if (quoteError instanceof Error) {
+        setErrors({ fromValue: { title: quoteError instanceof TraderRequestError && quoteError.code === 'EXISTING_HOLDER_REQUIRED'
+          ? 'Existing holder required' : 'Route unavailable', message: quoteError.message } });
         return;
       }
 

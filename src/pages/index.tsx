@@ -1,7 +1,6 @@
-import React from 'react';
+import dynamic from 'next/dynamic';
 
-const Index = () => {
-  return <div></div>;
-};
+const CaptainTerminal = dynamic(() => import('src/components/CaptainTerminal'), { ssr: false,
+  loading: () => <main className="captain-boot" role="status">Loading Captain Hook terminal…</main> });
 
-export default Index;
+export default function Trader() { return <CaptainTerminal />; }

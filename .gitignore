@@ -41,3 +41,5 @@ next-env.d.ts
 # Unused webpack tailwind entry
 public/Tailwind.js
 public/Tailwind.js.map
+/test-results/
+/playwright-report/

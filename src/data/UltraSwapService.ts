@@ -1,3 +1,6 @@
+import { assertSupportedHookedRoute } from './HookedOrcaRoutes';
+import { HookedOrcaPrepareResponse, traderJson } from './TraderApi';
+
 export const AGGREGATOR_SOURCES = {
   METIS: 'metis',
   JUPITERZ: 'jupiterz',
@@ -32,6 +35,12 @@ export interface UltraQuoteResponse {
     prioritizationFeeLamports?: number;
     feeBps: number;
     router: AggregatorSources;
+     routeKind?: 'hooked-orca' | 'jupiter-ultra';
+     prepared?: HookedOrcaPrepareResponse | null;
+     hookProgram?: string;
+     amountMode?: 'exact' | 'max';
+     estimatedInputRaw?: string;
+     simulation?: { passed: boolean; stage: 'preview' | 'setup' | 'swap' };
   }
 
 // Refer docs here https://dev.jup.ag/docs/api/ultra-api/order
@@ -127,6 +136,7 @@ class UltraSwapService implements UltraSwapService {
   };
 
   async getQuote(params: UltraSwapQuoteParams, signal?: AbortSignal): Promise<UltraQuoteResponse> {
+    assertSupportedHookedRoute(params.inputMint, params.outputMint, params.swapMode);
     const queryParams = new URLSearchParams(
       Object.entries(params)
         .filter(([_, value]) => value !== undefined)
@@ -139,29 +149,15 @@ class UltraSwapService implements UltraSwapService {
         ),
     );
 
-    const response = await fetch(`${this.ROUTE.ORDER}?${queryParams.toString()}`, { signal,
-      headers: {
-        'x-client-platform': 'jupiter.plugin'
-      }
-     });
-    if (!response.ok) {
-      throw response;
-    }
-    const result = await response.json();
-    return result;
+    return traderJson<UltraQuoteResponse>(`/api/trader/order?${queryParams.toString()}`, { signal });
   }
 
   async submitSwap(signedTransaction: string, requestId: string): Promise<UltraSwapResponse> {
-    const response = await fetch(this.ROUTE.SWAP, {
+    return traderJson<UltraSwapResponse>('/api/trader/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ signedTransaction, requestId }),
     });
-    if (!response.ok) {
-      throw response;
-    }
-    const result = await response.json();
-    return result;
   }
   async getRouters(): Promise<RouterResponse> {
     const response = await fetch(this.ROUTE.ROUTERS)
@@ -173,12 +169,7 @@ class UltraSwapService implements UltraSwapService {
   }
 
   async getBalance(address: string, signal?: AbortSignal): Promise<BalanceResponse> {
-    const response = await fetch(`${this.ROUTE.BALANCES}/${address}`, { signal });
-    if (!response.ok) {
-      throw response;
-    }
-    const result = await response.json();
-    return result;
+    return traderJson<BalanceResponse>(`/api/trader/balances/${address}`, { signal });
   }
   async getShield(mints: GetShieldRequest['mints'], signal?: AbortSignal): Promise<GetShieldResponse> {
     const searchParams = new URLSearchParams({
